@@ -134,3 +134,698 @@ Teknorix wishes to build an api to manage their job openings. Build the below de
 > PUT /api/v1/locations/{id}
 
 > GET /api/v1/locations
+
+
+
+  public class ContentLibrarysController : ApiController
+    {
+       
+        [Description("Create Content")]
+        [Route("contentlibrarys")]
+        [HttpPost]
+        public async Task<IHttpActionResult> CreateContentLibraryData( [FromBody] ContentReq contentReq)
+        {
+            var apiResponse = new APIResponse<ContentModel>();
+
+            var result = new ContentLibraryUtils(ContentLibraryFactory.Instance()).CreateContentLibraryData(contentReq);
+            apiResponse.ResultCode = result.Result.ResultCode;
+            apiResponse.ResultDescription = result.Result.ResultMessage;
+            //return await Task.FromResult(Ok(apiResponse));
+            return Ok(apiResponse);
+
+        }
+
+        [JwtAuthentication]
+        [Description("Get All Content")]
+        [Route("contentlibrarys")]
+        [HttpGet]
+        public async Task<IHttpActionResult> GetContentLibraryData()
+        {
+            var result = new ContentLibraryUtils(ContentLibraryFactory.Instance()).GetContentLibraryData();
+            var apiResponse = new APIResponse<List<ContentModel>>();
+            apiResponse.Data = result.Result.contentModels;
+            apiResponse.ResultCode = result.Result.ResultCode;
+            apiResponse.ResultDescription = result.Result.ResultMessage;
+            //  return await Task.FromResult(Ok(apiResponse));
+            return Ok(apiResponse);          
+
+        }
+
+
+        [Description("update Content")]
+        [Route("contentlibrarys/{contentmediaid}")]
+        [HttpPut]
+        public async Task<IHttpActionResult> UpdateContentLibrary(long contentmediaid, [FromBody] ContentReq contentReq)
+        {
+
+            contentReq.contentmediaId = contentmediaid;
+            var result = new ContentLibraryUtils(ContentLibraryFactory.Instance()).UpdateContentLibrary(contentReq);
+            var apiResponse = new APIResponse<ContentModel>();
+            apiResponse.ResultCode = result.Result.ResultCode;
+            apiResponse.ResultDescription = result.Result.ResultMessage;
+            // return await Task.FromResult(Ok(apiResponse));
+            return Ok(apiResponse);
+        }
+
+        [Description("Delete Content")]
+        [Route("contentlibrarys/{contentmediaid}")]
+        [HttpDelete]
+        public async Task<IHttpActionResult> DeleteContentLibrary(long contentmediaid)
+        {
+            var result = new ContentLibraryUtils(ContentLibraryFactory.Instance()).DeleteContentLibrary(contentmediaid);
+            var apiResponse = new APIResponse<ContentModel>();
+            apiResponse.ResultCode = result.Result.ResultCode;
+            apiResponse.ResultDescription = result.Result.ResultMessage;
+            //return await Task.FromResult(Ok(apiResponse));
+            return Ok(apiResponse);
+
+        }
+
+
+
+
+    }
+}
+
+
+namespace Society.API.ContentLibrary.Models
+{
+    public class ContentLibraryUtils : IContentLibraryUtils
+    {
+
+        private readonly IContentLibrary _contentLibrary = null;
+       
+        public ContentLibraryUtils(IContentLibrary contentLibrary)//creating obj of container class
+        {
+            this._contentLibrary = contentLibrary;
+        }
+
+       
+        public Task<BaseResponse> CreateContentLibraryData(ContentReq contentReq)
+        {
+           var  response = this._contentLibrary.CreateContentLibraryData(contentReq);
+            return response;
+        }
+
+        public Task<BaseResponse> GetContentLibraryData()
+        {
+           
+            var baseResponse = this._contentLibrary.GetContentLibraryDetails();
+            return baseResponse;
+        }
+       
+  
+
+        public Task<BaseResponse> UpdateContentLibrary(ContentReq contentReq)
+        {
+           var response = this._contentLibrary.UpdateContentLibrary(contentReq);
+            return response;
+        }
+
+        public Task<BaseResponse> DeleteContentLibrary(long contentId)
+        {
+           var  response = this._contentLibrary.DeleteContentLibrary(contentId);
+            return response;
+        }
+
+    }
+}
+
+    public class ContentLibraryProvider : IContentLibrary
+    {
+        private readonly IContentLibraryService _contentLibrary = null;
+        public ContentLibraryProvider(IContentLibraryService contentLibrary)
+        {
+            _contentLibrary = contentLibrary;
+        }
+
+
+        public Task<BaseResponse> CreateContentLibraryData(ContentReq contentreq)
+        {
+            var baseResponse = new BaseResponse();
+            var baseRequest = new  ContentReqProxy();
+           // var baseRequest = new ContentModelProxy();
+            var baseProxyResponse = new ContentBaseResponse();
+
+            baseRequest.contentTitle = contentreq.contentTitle;
+            baseRequest.imageUrl = contentreq.imageUrl;
+            baseRequest.description = contentreq.description;
+            baseRequest.category = contentreq.category;
+            baseRequest.externalLink = contentreq.externalLink;
+            baseRequest.isExternal = contentreq.isExternal;
+            //baseRequest.UpdateDate = contentreq.ContentModel.UpdateDate;
+            //baseRequest.CreateDate = contentreq.ContentModel.CreateDate;
+
+
+            if (contentreq != null)
+            {
+                baseProxyResponse = _contentLibrary.CreateContentLibraryData(baseRequest);
+            }
+
+            baseResponse.ResultCode = baseProxyResponse.ResultCode;
+            baseResponse.ResultMessage = baseProxyResponse.ResultMessage;
+            return Task.FromResult(baseResponse);
+
+
+        }
+        public Task<BaseResponse> GetContentLibraryDetails()
+        {
+
+            var contentResponse = new BaseResponse();
+            //contentResponse.contentModel = new List<DepartmentInfo>();
+            var baseProxyResponse = new ContentBaseResponse();
+            contentResponse.contentModels = new List<ContentModel>();
+
+            baseProxyResponse = _contentLibrary.GetContentLibraryDetails();
+
+            foreach (var item in baseProxyResponse.contentModels)
+            {
+                ContentModel contentModel = new ContentModel();
+                contentModel.contentmediaId  = item.contentmediaId;
+                contentModel.contentTitle = item.contentTitle;
+                contentModel.imageUrl = item.imageUrl;
+                contentModel.description = item.description;
+                contentModel.category = item.category;
+                contentModel.externalLink = item.externalLink;
+                contentModel.isExternal = item.isExternal;
+                contentModel.CreateDate = item.CreateDate;
+                contentModel.UpdateDate = item.UpdateDate;
+
+                contentResponse.contentModels.Add(contentModel);
+            }
+            contentResponse.ResultCode = baseProxyResponse.ResultCode;
+            contentResponse.ResultMessage = baseProxyResponse.ResultMessage;
+
+            return Task.FromResult(contentResponse);
+
+
+        }
+
+        public Task<BaseResponse> UpdateContentLibrary(ContentReq contentreq)
+        {
+            var baseResponse = new BaseResponse();
+
+
+            var baseProxyResponse = new ContentBaseResponse();
+            var baseRequest = new ContentReqProxy();
+
+            baseRequest.contentmediaId = contentreq.contentmediaId;
+            baseRequest.contentTitle = contentreq.contentTitle;
+            baseRequest.imageUrl = contentreq.imageUrl;
+            baseRequest.description = contentreq.description;
+            baseRequest.category = contentreq.category;
+            baseRequest.externalLink = contentreq.externalLink;
+            baseRequest.isExternal = contentreq.isExternal;
+            //baseRequest.UpdateDate = contentreq.ContentModel.UpdateDate;
+            //baseRequest.CreateDate = contentreq.ContentModel.CreateDate;
+
+            baseProxyResponse = _contentLibrary.UpdateContentLibrary(baseRequest);
+
+            baseResponse.ResultCode = baseProxyResponse.ResultCode;
+            baseResponse.ResultMessage = baseProxyResponse.ResultMessage;
+
+            return Task.FromResult(baseResponse);
+
+
+            //  return Task.FromResult(baseResponse);
+        }
+
+        public Task<BaseResponse> DeleteContentLibrary(long contentId)
+        {
+            BaseResponse deptResponse = new BaseResponse();
+            var baseProxyResponse = new ContentBaseResponse();
+
+            baseProxyResponse = _contentLibrary.DeleteContentLibrary(contentId);
+            deptResponse.ResultCode = baseProxyResponse.ResultCode;
+            deptResponse.ResultMessage = baseProxyResponse.ResultMessage;
+            return Task.FromResult(deptResponse);
+
+
+        }
+
+    }
+}
+
+namespace Society.API.ContentLibrary.Tests.ContentMedia
+{
+    /// <summary>
+    /// Summary description for ContentMediaTestCase
+    /// </summary>
+    [TestClass]
+    public class ContentMediaTestCase
+    {
+
+
+        public ContentMediaTestCase()
+        {
+            //
+            // TODO: Add constructor logic here
+            //
+        }
+
+        private TestContext testContextInstance;
+
+        /// <summary>
+        ///Gets or sets the test context which provides
+        ///information about and functionality for the current test run.
+        ///</summary>
+        public TestContext TestContext
+        {
+            get
+            {
+                return testContextInstance;
+            }
+            set
+            {
+                testContextInstance = value;
+            }
+        }
+
+        #region Additional test attributes
+        //
+        // You can use the following additional attributes as you write your tests:
+        //
+        // Use ClassInitialize to run code before running the first test in the class
+        // [ClassInitialize()]
+        // public static void MyClassInitialize(TestContext testContext) { }
+        //
+        // Use ClassCleanup to run code after all tests in a class have run
+        // [ClassCleanup()]
+        // public static void MyClassCleanup() { }
+        //
+        // Use TestInitialize to run code before running each test 
+        // [TestInitialize()]
+        // public void MyTestInitialize() { }
+        //
+        // Use TestCleanup to run code after each test has run
+        // [TestCleanup()]
+        // public void MyTestCleanup() { }
+        //
+        #endregion
+    
+
+        #region "Controller Test Cases"
+        public ContentLibrarysController contentLibrarysControllerInit()
+        {
+            ContentLibrarysController controller = new ContentLibrarysController();
+            controller.Request = new HttpRequestMessage();
+            controller.Configuration = new HttpConfiguration();
+            return controller;
+
+        }
+
+        #region "Positive Cases"
+
+        [TestMethod]
+        public void ContentLibrarysInformationWhenValidForController()
+        {
+            ContentReq contentReq = new ContentReq() { contentmediaId = 1, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            var controller = contentLibrarysControllerInit();
+            var expectedResponse = controller.GetContentLibraryData();
+            var p = ((System.Web.Http.Results.OkNegotiatedContentResult<APIResponse<List<ContentModel>>>)expectedResponse.Result).Content;
+            Assert.IsNotNull(p.Data);
+            Assert.AreEqual(ContentMediaTestData.contentmediaID, p.Data[0].contentmediaId);
+            Assert.AreEqual(contentReq.contentTitle, p.Data[0].contentTitle);
+            Assert.AreEqual(contentReq.description, p.Data[0].description);
+            Assert.AreEqual(contentReq.category, p.Data[0].category);
+            Assert.AreEqual(ContentMediaTestData.actionSuccess, p.ResultDescription);
+
+            Assert.IsInstanceOfType(p, typeof(APIResponse<List<ContentModel>>));
+        }
+        [TestMethod]
+        public void CreateContentLibrarysWhenValidForController()
+        {
+            ContentReq contentReq = new ContentReq() { contentmediaId = 1, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            var controller = contentLibrarysControllerInit();
+            var expectedResponse = controller.CreateContentLibraryData(contentReq);
+            var p = ((System.Web.Http.Results.OkNegotiatedContentResult<APIResponse<ContentModel>>)expectedResponse.Result).Content;
+            Assert.AreEqual(ContentMediaTestData.dataCreated, p.ResultDescription);
+            Assert.IsInstanceOfType(p, typeof(APIResponse<ContentModel>));
+        }
+
+        [TestMethod]
+        public void UpdateContentLibrarysWhenValidForController()
+        {
+            ContentReq contentReq = new ContentReq() { contentmediaId = 1, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            var controller = contentLibrarysControllerInit();
+            var expectedResponse = controller.UpdateContentLibrary(ContentMediaTestData.contentmediaID, contentReq);
+            var p = ((System.Web.Http.Results.OkNegotiatedContentResult<APIResponse<ContentModel>>)expectedResponse.Result).Content;
+            Assert.AreEqual(ContentMediaTestData.actionSuccess, p.ResultDescription);
+            Assert.IsInstanceOfType(p, typeof(APIResponse<ContentModel>));
+        }
+
+        [TestMethod]
+        public void DeleteContentLibrarysWhenValidForController()
+        {
+            var controller = contentLibrarysControllerInit();
+            var expectedResponse = controller.DeleteContentLibrary(ContentMediaTestData.contentmediaID);
+            var p = ((System.Web.Http.Results.OkNegotiatedContentResult<APIResponse<ContentModel>>)expectedResponse.Result).Content;
+            Assert.AreEqual(ContentMediaTestData.actionSuccess, p.ResultDescription);
+            Assert.IsInstanceOfType(p, typeof(APIResponse<ContentModel>));
+        }
+
+
+        #endregion
+
+        #region "Negetive Cases"
+
+      
+
+        [TestMethod]
+        public void GetContentLibrarysInformationWhenInValidForController()
+        {
+            var controller = contentLibrarysControllerInit();
+            var expectedResponse = controller.GetContentLibraryData();
+            var p = ((System.Web.Http.Results.OkNegotiatedContentResult<APIResponse<List<ContentModel>>>)expectedResponse.Result).Content;
+            Assert.AreNotEqual(ContentMediaTestData.Failure, p.ResultDescription);
+            Assert.AreNotEqual(ContentMediaTestData.ContentId2, p.Data[0].contentmediaId);
+        }
+        [TestMethod]
+        public void CreateContentLibrarysWhenInValidForController()
+        {
+            ContentReq contentReq = new ContentReq() { contentmediaId = 2, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            var controller = contentLibrarysControllerInit();
+            var expectedResponse = controller.CreateContentLibraryData(contentReq);
+            var result = ((System.Web.Http.Results.OkNegotiatedContentResult<APIResponse<ContentModel>>)expectedResponse.Result).Content;
+            Assert.IsNotNull(result);
+            Assert.IsNotInstanceOfType(result, typeof(APIResponse<string>));
+            Assert.AreNotEqual(ContentMediaTestData.actionSuccess, result.ResultDescription);
+        }
+        [TestMethod]
+        public void UpdateContentLibrarysWhenInValidForController()
+        {
+            ContentReq contentReq = new ContentReq() { contentmediaId = 1, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            var controller = contentLibrarysControllerInit();
+            var expectedResponse = controller.UpdateContentLibrary(2, contentReq);
+            var result = ((System.Web.Http.Results.OkNegotiatedContentResult<APIResponse<ContentModel>>)expectedResponse.Result).Content;
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result, typeof(APIResponse<ContentModel>));
+            Assert.AreEqual(ContentMediaTestData.unKnown, result.ResultDescription);
+        }
+        [TestMethod]
+        public void DeleteContentLibrarysWhenInValidForController()
+        {
+            var controller = contentLibrarysControllerInit();
+            var expectedResponse = controller.DeleteContentLibrary(123);
+            var result = ((System.Web.Http.Results.OkNegotiatedContentResult<APIResponse<ContentModel>>)expectedResponse.Result).Content;
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result, typeof(APIResponse<ContentModel>));
+            Assert.AreEqual(ContentMediaTestData.unKnown, result.ResultDescription);
+        }
+        #endregion
+
+        #endregion
+
+
+        #region "Provider Test Cases"
+        #region positive
+        [TestMethod]
+        public void DeleteContentResultReturnNullAndResultSuccess()
+        {
+            ContentLibraryProvider mockDepartmentProvider = new ContentLibraryProvider();
+            ContentLibraryUtils SUtile = new ContentLibraryUtils(mockDepartmentProvider);
+            var result = SUtile.DeleteContentLibrary(ContentMediaTestData.contentmediaID);
+            Assert.IsNull(result.Result.contentModel);
+            Assert.AreEqual(Constants.SuccessResultCode.ToString(), result.Result.ResultCode.ToString());
+        }
+
+        [TestMethod]
+        public void DeleteContentResultPassDataMatching()
+        {
+            ContentLibraryProvider mockDepartmentProvider = new ContentLibraryProvider();
+            ContentLibraryUtils SUtile = new ContentLibraryUtils(mockDepartmentProvider);
+            var Exceptedtresult = SUtile.DeleteContentLibrary(ContentMediaTestData.contentmediaID);
+            var result = SUtile.DeleteContentLibrary(ContentMediaTestData.contentmediaID);
+            Assert.AreEqual(Exceptedtresult.Result.ResultCode, result.Result.ResultCode);
+        }
+
+
+        [TestMethod]
+        public void GetContentListResultDataSuccess()
+        {
+
+            ContentLibraryProvider mockDepartmentProvider = new ContentLibraryProvider();
+            ContentLibraryUtils SUtile = new ContentLibraryUtils(mockDepartmentProvider);
+            var result = SUtile.GetContentLibraryData();
+            Assert.IsNotNull(result);
+            Assert.IsNotNull(result.Result.contentModels);
+            Assert.AreEqual(ContentMediaTestData.actionSuccess, result.Result.ResultMessage);
+        }
+
+
+        [TestMethod]
+        public void UpdateContentResultSuccess()
+        {
+
+            ContentLibraryProvider mockDepartmentProvider = new ContentLibraryProvider();
+            ContentLibraryUtils SUtile = new ContentLibraryUtils(mockDepartmentProvider);
+            ContentReq contentReq = new ContentReq() { contentmediaId = 1, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            var result = SUtile.UpdateContentLibrary(contentReq);
+            Assert.IsNotNull(result);
+            Assert.IsNull(result.Result.contentModel);
+            Assert.IsInstanceOfType(result, typeof(Task<BaseResponse>));
+            Assert.AreEqual(Constants.SuccessResultCode, result.Result.ResultCode.ToString());
+        }
+
+        [TestMethod]
+        public void CreateContentResultSuccess()
+        {
+
+            ContentLibraryProvider mockDepartmentProvider = new ContentLibraryProvider();
+            ContentLibraryUtils SUtile = new ContentLibraryUtils(mockDepartmentProvider);
+            ContentReq contentReq = new ContentReq() { contentmediaId = 1, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            var result = SUtile.CreateContentLibraryData(contentReq);
+            Assert.IsNull(result.Result.contentModel);
+            Assert.IsInstanceOfType(result, typeof(Task<BaseResponse>));
+            Assert.AreEqual(Constants.DataCreatedSuccessfully, result.Result.ResultCode.ToString());
+        }
+        #endregion
+
+        #region negetive
+        [TestMethod]
+        public void DeleteContentResultReturnNullAndResultFailed()
+        {
+
+            ContentLibraryProvider mockDepartmentProvider = new ContentLibraryProvider();
+            ContentLibraryUtils SUtile = new ContentLibraryUtils(mockDepartmentProvider);
+            var result = SUtile.DeleteContentLibrary(ContentMediaTestData.ContentId2);
+            Assert.IsNull(result.Result.contentModel);
+            Assert.AreNotEqual(Constants.SuccessResultCode, result.Result.ResultCode);
+        }
+
+        [TestMethod]
+        public void DeleteContentResultReturnNullAndResultFail()
+        {
+
+            ContentLibraryProvider mockDepartmentProvider = new ContentLibraryProvider();
+            ContentLibraryUtils SUtile = new ContentLibraryUtils(mockDepartmentProvider);
+            var result = SUtile.DeleteContentLibrary(4523);
+            Assert.IsNull(result.Result.contentModel);
+            Assert.AreEqual(Constants.BadRequest, result.Result.ResultCode);
+        }
+
+        [TestMethod]
+        public void GetContentListResultDataFail()
+        {
+
+            ContentLibraryProvider mockDepartmentProvider = new ContentLibraryProvider();
+            ContentLibraryUtils SUtile = new ContentLibraryUtils(mockDepartmentProvider);
+            var result = SUtile.GetContentLibraryData();
+            Assert.IsNotNull(result);
+            Assert.IsNotNull(result.Result.contentModels);
+            Assert.AreNotEqual(ContentMediaTestData.Failure, result.Result.ResultCode);
+        }
+        [TestMethod]
+        public void DeleteContentResultPassDataMatchingFail()
+        {
+
+            ContentLibraryProvider mockDepartmentProvider = new ContentLibraryProvider();
+            ContentLibraryUtils SUtile = new ContentLibraryUtils(mockDepartmentProvider);
+            var Exceptedtresult = SUtile.DeleteContentLibrary(ContentMediaTestData.contentmediaID);
+            var result = SUtile.DeleteContentLibrary(14232);
+            Assert.AreNotEqual(Exceptedtresult.Result.ResultCode, result.Result.ResultCode);
+        }
+
+        [TestMethod]
+        public void CreateContentResultFail()
+        {
+
+            ContentLibraryProvider mockDepartmentProvider = new ContentLibraryProvider();
+            ContentLibraryUtils SUtile = new ContentLibraryUtils(mockDepartmentProvider);
+            ContentReq contentReq = new ContentReq() { contentmediaId = ContentMediaTestData.ContentIdW, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            var result = SUtile.CreateContentLibraryData(contentReq);
+            Assert.IsNull(result.Result.contentModel);
+            Assert.IsInstanceOfType(result, typeof(Task<BaseResponse>));
+            Assert.AreNotEqual(Constants.DataCreatedSuccessfully.ToString(), result.Result.ResultCode.ToString());
+        }
+
+        [TestMethod]
+        public void UpdateContentResultfail()
+        {
+
+            ContentLibraryProvider mockDepartmentProvider = new ContentLibraryProvider();
+            ContentLibraryUtils SUtile = new ContentLibraryUtils(mockDepartmentProvider);
+            ContentReq contentReq = new ContentReq() { contentmediaId = ContentMediaTestData.ContentIdW, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            var result = SUtile.UpdateContentLibrary(contentReq);
+            Assert.IsNotNull(result);
+            Assert.IsNull(result.Result.contentModel);
+            Assert.IsInstanceOfType(result, typeof(Task<BaseResponse>));
+            Assert.AreNotEqual(Constants.SuccessResultCode, result.Result.ResultCode.ToString());
+        }
+
+
+        #endregion
+        #endregion
+
+
+        #region ContentLibrary Service
+        #region Positive
+        [TestMethod]
+        public void RetutndataWhenGetContentLibrarytRequestIsValidForContent()
+        {
+            MockServiceFactoryContentLibrary_V1Instance mockInstance = new MockServiceFactoryContentLibrary_V1Instance();
+            ContentLibraryService contentLibraryMaintenancev9Service = new ContentLibraryService(mockInstance);
+            ContentBaseResponse baseResponseProxy = new ContentBaseResponse()
+            {
+            };
+            var result = contentLibraryMaintenancev9Service.GetContentLibraryDetails();
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result, typeof(ContentBaseResponse));
+            //Assert.AreEqual(cardTestData.CardNumber5, result.CamsZCASTWS[0].PlIdDsp);
+            //Assert.AreEqual(4, result.CamsZCASTWS.Length);
+            Assert.AreEqual(ContentMediaTestData.Success.ToString(), result.ResultCode);
+        }
+        [TestMethod]
+        public void RetutndataWhenCreateContentLibrarytRequestIsValidForContent()
+        {
+            MockServiceFactoryContentLibrary_V1Instance mockInstance = new MockServiceFactoryContentLibrary_V1Instance();
+            ContentLibraryService contentLibraryMaintenancev9Service = new ContentLibraryService(mockInstance);
+            ContentReqProxy contentReq = new ContentReqProxy() { contentmediaId = ContentMediaTestData.contentmediaID, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            ContentBaseResponse baseResponseProxy = new ContentBaseResponse()
+            {
+            };
+            var result = contentLibraryMaintenancev9Service.CreateContentLibraryData(contentReq);
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result, typeof(ContentBaseResponse));
+            //Assert.AreEqual(cardTestData.CardNumber5, result.CamsZCASTWS[0].PlIdDsp);
+            //Assert.AreEqual(4, result.CamsZCASTWS.Length);
+            Assert.AreEqual(ContentMediaTestData.dataCreated.ToString(), result.ResultMessage);
+        }
+        [TestMethod]
+        public void RetutndataWhenUpdateContentLibrarytRequestIsValidForContent()
+        {
+            MockServiceFactoryContentLibrary_V1Instance mockInstance = new MockServiceFactoryContentLibrary_V1Instance();
+            ContentLibraryService contentLibraryMaintenancev9Service = new ContentLibraryService(mockInstance);
+            ContentReqProxy contentReq = new ContentReqProxy() { contentmediaId = ContentMediaTestData.contentmediaID, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            ContentBaseResponse baseResponseProxy = new ContentBaseResponse()
+            {
+            };
+            var result = contentLibraryMaintenancev9Service.UpdateContentLibrary(contentReq);
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result, typeof(ContentBaseResponse));
+            //Assert.AreEqual(cardTestData.CardNumber5, result.CamsZCASTWS[0].PlIdDsp);
+            //Assert.AreEqual(4, result.CamsZCASTWS.Length);
+            Assert.AreEqual(ContentMediaTestData.actionSuccess.ToString(), result.ResultMessage);
+        }
+        [TestMethod]
+        public void RetutndataWhenDeleteContentLibrarytRequestIsValidForContent()
+        {
+            MockServiceFactoryContentLibrary_V1Instance mockInstance = new MockServiceFactoryContentLibrary_V1Instance();
+            ContentLibraryService contentLibraryMaintenancev9Service = new ContentLibraryService(mockInstance);
+            ContentReqProxy contentReq = new ContentReqProxy() { contentmediaId = ContentMediaTestData.contentmediaID, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            ContentBaseResponse baseResponseProxy = new ContentBaseResponse()
+            {
+            };
+            var result = contentLibraryMaintenancev9Service.DeleteContentLibrary(ContentMediaTestData.contentmediaID);
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result, typeof(ContentBaseResponse));
+            //Assert.AreEqual(cardTestData.CardNumber5, result.CamsZCASTWS[0].PlIdDsp);
+            //Assert.AreEqual(4, result.CamsZCASTWS.Length);
+            Assert.AreEqual(ContentMediaTestData.unKnown.ToString(), result.ResultMessage);
+        }
+        #endregion
+        #region Negative
+        [TestMethod]
+        public void RetutndataWhenGetContentLibrarytRequestIsInValidForContent()
+        {
+            MockServiceFactoryContentLibrary_V1Instance mockInstance = new MockServiceFactoryContentLibrary_V1Instance();
+            ContentLibraryService contentLibraryMaintenancev9Service = new ContentLibraryService(mockInstance);
+            ContentBaseResponse baseResponseProxy = new ContentBaseResponse()
+            {
+            };
+            var result = contentLibraryMaintenancev9Service.GetContentLibraryDetails();
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result, typeof(ContentBaseResponse));
+            //Assert.AreEqual(cardTestData.CardNumber5, result.CamsZCASTWS[0].PlIdDsp);
+            //Assert.AreEqual(4, result.CamsZCASTWS.Length);
+            Assert.AreEqual(ContentMediaTestData.Success.ToString(), result.ResultCode);
+        }
+        [TestMethod]
+        public void RetutndataWhenCreateContentLibrarytRequestIsInValidForContent()
+        {
+            MockServiceFactoryContentLibrary_V1Instance mockInstance = new MockServiceFactoryContentLibrary_V1Instance();
+            ContentLibraryService contentLibraryMaintenancev9Service = new ContentLibraryService(mockInstance);
+            ContentReqProxy contentReq = new ContentReqProxy() { contentmediaId = ContentMediaTestData.ContentIdW, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            ContentBaseResponse baseResponseProxy = new ContentBaseResponse()
+            {
+            };
+            var result = contentLibraryMaintenancev9Service.CreateContentLibraryData(contentReq);
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result, typeof(ContentBaseResponse));
+            //Assert.AreEqual(cardTestData.CardNumber5, result.CamsZCASTWS[0].PlIdDsp);
+            //Assert.AreEqual(4, result.CamsZCASTWS.Length);
+            Assert.AreNotEqual(ContentMediaTestData.dataCreated.ToString(), result.ResultMessage);
+        }
+        [TestMethod]
+        public void RetutndataWhenUpdateContentLibrarytRequestIsInValidForContent()
+        {
+            MockServiceFactoryContentLibrary_V1Instance mockInstance = new MockServiceFactoryContentLibrary_V1Instance();
+            ContentLibraryService contentLibraryMaintenancev9Service = new ContentLibraryService(mockInstance);
+            ContentReqProxy contentReq = new ContentReqProxy() { contentmediaId = ContentMediaTestData.ContentIdW, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            ContentBaseResponse baseResponseProxy = new ContentBaseResponse()
+            {
+            };
+            var result = contentLibraryMaintenancev9Service.UpdateContentLibrary(contentReq);
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result, typeof(ContentBaseResponse));
+            //Assert.AreEqual(cardTestData.CardNumber5, result.CamsZCASTWS[0].PlIdDsp);
+            //Assert.AreEqual(4, result.CamsZCASTWS.Length);
+            Assert.AreNotEqual(ContentMediaTestData.actionSuccess.ToString(), result.ResultMessage);
+        }
+        [TestMethod]
+        public void RetutndataWhenDeleteContentLibrarytRequestIsInValidForContent()
+        {
+            MockServiceFactoryContentLibrary_V1Instance mockInstance = new MockServiceFactoryContentLibrary_V1Instance();
+            ContentLibraryService contentLibraryMaintenancev9Service = new ContentLibraryService(mockInstance);
+            ContentReqProxy contentReq = new ContentReqProxy() { contentmediaId = ContentMediaTestData.contentmediaID, contentTitle = "Garden", imageUrl = "garden@gmail.com", description = "Wonderful garden", category = "awarenes2s", externalLink = "facebook.com", isExternal = true };
+
+            ContentBaseResponse baseResponseProxy = new ContentBaseResponse()
+            {
+            };
+            var result = contentLibraryMaintenancev9Service.DeleteContentLibrary(ContentMediaTestData.ContentIdW);
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result, typeof(ContentBaseResponse));
+            //Assert.AreEqual(cardTestData.CardNumber5, result.CamsZCASTWS[0].PlIdDsp);
+            //Assert.AreEqual(4, result.CamsZCASTWS.Length);
+            Assert.AreNotEqual(ContentMediaTestData.Success.ToString(), result.ResultMessage);
+        }
+
+        #endregion
+        #endregion
+    }
+
+}
